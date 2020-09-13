@@ -1,5 +1,6 @@
 \c biztime
-
+DROP TABLE IF EXISTS domains;
+DROP TABLE IF EXISTS industries;
 DROP TABLE IF EXISTS invoices;
 DROP TABLE IF EXISTS companies;
 
@@ -19,12 +20,27 @@ CREATE TABLE invoices (
     CONSTRAINT invoices_amt_check CHECK ((amt > (0)::double precision))
 );
 
+CREATE TABLE industries (
+    ind_code text PRIMARY KEY,
+    industry text NOT NULL
+);
+
+CREATE TABLE domains (
+  company_code text NOT NULL REFERENCES companies ON DELETE CASCADE,
+  industry_code text NOT NULL REFERENCES industries ON DELETE CASCADE,
+  PRIMARY KEY(company_code, industry_code)
+);
+
 INSERT INTO companies
   VALUES ('apple', 'Apple Computer', 'Maker of OSX.'),
          ('ibm', 'IBM', 'Big blue.');
 
-INSERT INTO invoices (comp_Code, amt, paid, paid_date)
+INSERT INTO invoices (comp_code, amt, paid, paid_date)
   VALUES ('apple', 100, false, null),
          ('apple', 200, false, null),
          ('apple', 300, true, '2018-01-01'),
          ('ibm', 400, false, null);
+
+INSERT INTO industries VALUES ('tech', 'Technology'), ('retail', 'Retailing'), ('IT','Sofrware Company');
+
+INSERT INTO domains VALUES ('apple', 'tech'),('apple', 'retail'), ('apple','IT'), ('ibm','tech'), ('ibm', 'IT');

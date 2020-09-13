@@ -55,15 +55,33 @@ router.post('', async function (req, res, next) {
 router.patch('/:id', async function (req, res, next) {
     try {
         const id = req.params.id;
-        const { amt } = req.body;
-        if (!amt) {
-            throw new ExpressError('amt not specified!', 400);
+        const origInv = await find(id);
+        // console.log(origInv.rows);
+        const origPaid = origInv.rows[0].paid;
+        // console.log(">>>", origPaid);
+        const { amt, paid } = req.body;
+        let results;
+        const date_ob = new Date();
+        let day = date_ob.getDate();
+        let month = date_ob.getMonth() + 1;
+        let year = date_ob.getFullYear();
+        let now = year.toString() + '-' + month.toString() + '-' + day.toString();
+        // console.log("<<<", now);
+        if (!amt && !paid) {
+            throw new ExpressError('amt and paid both not specified!', 400);
         }
-        const results = await db.query(`UPDATE invoices SET amt=$1 WHERE id=$2 RETURNING id, comp_code, amt, paid, add_date, paid_date`, [amt, id]);
-        if (results.rows.length === 0) {
-            throw new ExpressError('Invoice id not found!', 404);
+
+        // if (results.rows.length === 0) {
+        //     throw new ExpressError('Invoice id not found!', 404);
+        // }
+        if (origPaid === false && paid === true) {
+            results = await db.query(`UPDATE invoices SET amt=$1, paid=$2, paid_date=$3 WHERE id=$4 RETURNING id, comp_code, amt, paid, add_date, paid_date`, [amt, paid, now, id]);
+        } else if (origPaid === true && paid === false) {
+            results = await db.query(`UPDATE invoices SET amt=$1, paid=$2, paid_date=$3 WHERE id=$4 RETURNING id, comp_code, amt, paid, add_date, paid_date`, [amt, paid, null, id])
+        } else {
+            results = await db.query(`UPDATE invoices SET amt=$1 WHERE id=$2 RETURNING id, comp_code, amt, paid, add_date, paid_date`, [amt, id]);
         }
-        return res.json(results.rows[0]);
+        return res.json({ invoice: results.rows[0] });
     } catch (err) {
         return next(err);
     }

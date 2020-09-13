@@ -12,7 +12,12 @@ async function find(code) {
 }
 
 async function joinFind(code) {
-    let results = await db.query(`SELECT * FROM companies JOIN invoices ON invoices.comp_code=companies.code WHERE code=$1`, [code]);
+    let results = await db.query(`SELECT comp.code, comp.name, comp.description, inv.id, inv.amt, inv.paid, inv.add_date, inv.paid_date, ind.industry
+    FROM companies AS comp
+    JOIN invoices AS inv ON inv.comp_code=comp.code
+    JOIN domains AS dom ON comp.code=dom.company_code
+    JOIN industries AS ind ON dom.industry_code=ind.ind_code
+    WHERE code=$1`, [code]);
     if (results.rows.length === 0) {
         throw new ExpressError('Company/Invoice not found!', 404);
     }
